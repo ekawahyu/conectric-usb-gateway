@@ -10,6 +10,8 @@ const conectricUsbGateway = {
     macAddress: undefined,
     parser: undefined,
     serialPort: undefined,
+    contikiVersion: undefined,
+    conectricVersion: undefined,
 
     MESSAGE_TYPES: {
         '30': 'tempHumidity',
@@ -35,7 +37,7 @@ const conectricUsbGateway = {
 
     IGNORABLE_MESSAGE_TYPES: [ '33', '34', '35' ],
 
-    KNOWN_COMMANDS: [ 'DB', 'MR' ],
+    KNOWN_COMMANDS: [ 'DP', 'MR', 'SS', 'VER' ],
 
     runGateway: async function(params) {
         const validationResult = Joi.validate(params, conectricUsbGateway.PARAM_SCHEMA);
@@ -95,6 +97,8 @@ const conectricUsbGateway = {
             conectricUsbGateway.macAddress = undefined;
             conectricUsbGateway.parser = undefined;
             conectricUsbGateway.serialPort = undefined;
+            conectricUsbGateway.conectricVersion = undefined;
+            conectricUsbGateway.contikiVersion = undefined;
             return;
         }
 
@@ -111,8 +115,8 @@ const conectricUsbGateway = {
         });
 
         conectricUsbGateway.parser.on('data', function(data) {
-            if (data.startsWith('>')) {
-                // Found a message.
+            if (data.startsWith('>') && conectricUsbGateway.conectricVersion && conectricUsbGateway.contikiVersion && conectricUsbGateway.macAddress) {
+                // Found a message and we have started up properly.
                 conectricUsbGateway.parseMessage(`${data.substring(1)}`);
             } else if (data.startsWith('MR:')) {
                 // Found mac address.
@@ -121,6 +125,12 @@ const conectricUsbGateway = {
             } else if (data === 'DP:Ok') {
                 // Dump buffer was acknowledged OK.
                 console.log('Switched gateway to dump payload mode.');
+            } else if (data.startsWith('VER:Contiki')) {
+                conectricUsbGateway.contikiVersion = data.substring(12);
+                console.log(`USB router Contiki version: ${conectricUsbGateway.contikiVersion}`);
+            } else if (data.startsWith('VER:Conectric-v')) {
+                conectricUsbGateway.conectricVersion = data.substring(15);
+                console.log(`USB router Conectric version: ${conectricUsbGateway.conectricVersion}`);
             } else {
                 if (! conectricUsbGateway.KNOWN_COMMANDS.includes(data)) {
                     if (conectricUsbGateway.params.debugMode) {
@@ -131,7 +141,7 @@ const conectricUsbGateway = {
         });
         
         setTimeout(function() {
-            conectricUsbGateway.serialPort.write('DP\nMR\n');
+            conectricUsbGateway.serialPort.write('DP\nMR\nVER\n');
         }, 1500);
     },
 
