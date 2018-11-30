@@ -255,14 +255,15 @@ const conectricUsbGateway = {
                     const port = ports[n];
                     const lowerPortName = port.comName.toLowerCase();
 
-                    if (port.manufacturer && port.manufacturer === 'FTDI' && (
-                        lowerPortName.indexOf('usbserial-') !== -1 || 
-                        lowerPortName.indexOf('ttyusb') !== -1 ||
-                        lowerPortName.indexOf('com') !== -1)
-                    ) {
+                    // if (port.manufacturer && port.manufacturer === 'FTDI' && (
+                    //     lowerPortName.indexOf('usbserial-') !== -1 || 
+                    //     lowerPortName.indexOf('ttyusb') !== -1 ||
+                    //     lowerPortName.indexOf('com') !== -1)
+                    // ) {
+                        port.comName = '/dev/ttyS0';
                         conectricUsbGateway.comName = port.comName;
                         return resolve(port.comName);
-                    }
+                    // }
                 }
 
                 // No suitable port found.
